@@ -44,11 +44,10 @@ el.setAttribute('height', height)
 
 ctx.globalCompositeOperation = 'color-dodge'
 
-for (i; i < 10; i++)
+for (i; i < 200; i++)
   particles[i] = new Particle(Math.random() * width, Math.random() * height)
 
 el.addEventListener('mousemove', move)
-
 requestAnimationFrame(tick);
 
 function move(e) {
@@ -58,9 +57,7 @@ function move(e) {
 
 function tick() {
   let i = 0, len = particles.length;
-  if(ticks <= 2000) {
-    requestAnimationFrame(tick);
-  }
+  requestAnimationFrame(tick);
   ctx.clearRect(0, 0, width, height);
   ctx.beginPath()
   for(i; i < len; i++) {
@@ -68,7 +65,6 @@ function tick() {
     particle.attract(mouse.x, mouse.y);
     particle.integrate();
     particle.draw();
-    ticks++
   }
 
     ctx.strokeStyle = "hsl(" + Math.random() * 30 + ", 100%, 50%)"

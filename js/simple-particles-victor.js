@@ -17,9 +17,17 @@ class VictorParticle {
     this.position.add(velocity)
   }
 
-  attract(point) {
+  attract(x, y) {
+    let point = new Victor(x, y)
+    let dx = x - this.position.x;
+    let dy = y - this.position.y;
+    let d2 = Math.sqrt(dx * dx + dy * dy);
+    // this.position.x += dx / distance;
+    // this.position.y += dy / distance;
     point.subtract(this.position)
-    let distance = point.distance(this.position)
+    // let distance = point.distance(this.position)
+    let distance = Math.sqrt(point.x * point.x + point.y * point.y)
+    // console.log(point.x, dx, point.y, dy, Math.sqrt(point.x * point.x + point.y * point.y), d2);
     this.position.add(point.divideScalar(distance))
   }
 
@@ -44,7 +52,7 @@ el.setAttribute('height', height)
 
 ctx.globalCompositeOperation = 'color-dodge'
 
-for (i; i < 10; i++)
+for (i; i < 200; i++)
   particles[i] = new VictorParticle(Math.random() * width, Math.random() * height)
 
 el.addEventListener('mousemove', move)
@@ -58,17 +66,14 @@ function move(e) {
 
 function tick() {
   let i = 0, len = particles.length;
-  if(ticks <= 2000) {
-    requestAnimationFrame(tick);
-  }
+  requestAnimationFrame(tick);
   ctx.clearRect(0, 0, width, height);
   ctx.beginPath()
   for(i; i < len; i++) {
     let particle = particles[i]
-    particle.attract(mouse.clone());
+    particle.attract(mouse.x, mouse.y);
     particle.integrate();
     particle.draw();
-    ticks++
   }
 
     ctx.strokeStyle = "hsl(" + Math.random() * 30 + ", 100%, 50%)"
