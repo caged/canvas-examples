@@ -17,17 +17,9 @@ class VictorParticle {
     this.position.add(velocity)
   }
 
-  attract(x, y) {
-    let point = new Victor(x, y)
-    let dx = x - this.position.x;
-    let dy = y - this.position.y;
-    let d2 = Math.sqrt(dx * dx + dy * dy);
-    // this.position.x += dx / distance;
-    // this.position.y += dy / distance;
+  attract(point) {
+    let distance = point.distance(this.position)
     point.subtract(this.position)
-    // let distance = point.distance(this.position)
-    let distance = Math.sqrt(point.x * point.x + point.y * point.y)
-    // console.log(point.x, dx, point.y, dy, Math.sqrt(point.x * point.x + point.y * point.y), d2);
     this.position.add(point.divideScalar(distance))
   }
 
@@ -50,9 +42,10 @@ var ctx = el.getContext('2d'),
 el.setAttribute('width', width)
 el.setAttribute('height', height)
 
-ctx.globalCompositeOperation = 'color-dodge'
+ctx.globalCompositeOperation = 'lighter'
 
-for (i; i < 200; i++)
+
+for (i; i < 10000; i++)
   particles[i] = new VictorParticle(Math.random() * width, Math.random() * height)
 
 el.addEventListener('mousemove', move)
@@ -71,11 +64,12 @@ function tick() {
   ctx.beginPath()
   for(i; i < len; i++) {
     let particle = particles[i]
-    particle.attract(mouse.x, mouse.y);
+    particle.attract(mouse.clone());
     particle.integrate();
     particle.draw();
   }
 
-    ctx.strokeStyle = "hsl(" + Math.random() * 30 + ", 100%, 50%)"
+    ctx.strokeStyle = "hsl(120, 100%, 30%)"
+    ctx.strokeOpacity = 0.1
     ctx.stroke()
 }
