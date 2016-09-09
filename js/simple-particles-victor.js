@@ -1,40 +1,40 @@
 // Based on http://www.playfuljs.com/particle-effects-are-easy/
 const DAMPING = 0.999;
 
-class Particle {
+class VictorParticle {
   constructor(x, y) {
-    this.x = this.oldX = x;
-    this.y = this.oldY = y;
+    this.position = new Victor(x, y)
+    this.oldPosition = this.position.clone()
   }
 
   integrate() {
-    let velocityX = (this.x - this.oldX) * DAMPING;
-    let velocityY = (this.y - this.oldY)  * DAMPING;
-    this.oldX = this.x;
-    this.oldY = this.y;
-    this.x += velocityX;
-    this.y += velocityY;
+    let velocity = this.position
+      .clone()
+      .subtract(this.oldPosition)
+      .multiplyScalar(DAMPING)
+
+    this.oldPosition.copy(this.position)
+    this.position.add(velocity)
   }
 
-  attract(x, y) {
-    let dx = x - this.x;
-    let dy = y - this.y;
-    let distance = Math.sqrt(dx * dx + dy * dy);
-    this.x += dx / distance;
-    this.y += dy / distance;
+  attract(point) {
+    point.subtract(this.position)
+    let distance = point.distance(this.position)
+    this.position.add(point.divideScalar(distance))
   }
 
   draw() {
-    ctx.moveTo(this.oldX, this.oldY);
-    ctx.lineTo(this.x, this.y);
+    ctx.moveTo(this.oldPosition.x, this.oldPosition.y)
+    ctx.lineTo(this.position.x, this.position.y)
   }
 }
+
 
 let el = document.getElementById('vis')
 var ctx = el.getContext('2d'),
     width = el.offsetWidth,
     height = el.offsetHeight,
-    mouse = { x: width * 0.5, y: height * 0.5 },
+    mouse = new Victor(width * 0.5, height * 0.5),
     particles = [],
     i = 0,
     ticks = 0
@@ -45,7 +45,7 @@ el.setAttribute('height', height)
 ctx.globalCompositeOperation = 'color-dodge'
 
 for (i; i < 10; i++)
-  particles[i] = new Particle(Math.random() * width, Math.random() * height)
+  particles[i] = new VictorParticle(Math.random() * width, Math.random() * height)
 
 el.addEventListener('mousemove', move)
 
@@ -65,7 +65,7 @@ function tick() {
   ctx.beginPath()
   for(i; i < len; i++) {
     let particle = particles[i]
-    particle.attract(mouse.x, mouse.y);
+    particle.attract(mouse.clone());
     particle.integrate();
     particle.draw();
     ticks++
