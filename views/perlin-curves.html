@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<meta charset="utf-8">
+<style>
+
+    body {
+      margin: 0;
+      padding: 0;
+    background: rgb(255, 255, 255);
+    }
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="../js/perlin.js"></script>
+<script src="../js/victor.js" charset="utf-8"></script>
+<script>
+
+var width = 1440,
+    height = 600,
+    noiseScale = 0.002,
+    actorStepLength = 1,
+    numActors = 10000,
+    step = 0,
+    steps = 150;
+
+var canvas = d3.select("body")
+    .append("canvas")
+    .attr({width: width, height: height});
+
+var context = canvas.node().getContext("2d");
+context.fillStyle = "rgb(0, 0, 0)";
+context.fillRect(-1, -1, width, height);
+
+var actors = [];
+for(var i = 0; i < numActors; i++) {
+    actors.push(actor(width, height, noiseScale, actorStepLength));
+}
+
+var opacity = easeInOut(steps);
+
+d3.timer(function() {
+    if(++step > steps) {
+        console.log("done with animation");
+        return true;
+    }
+    context.lineWidth = 1;
+    context.globalCompositeOperation = 'lighter';
+    context.beginPath();
+    for(var i in actors) {
+        var a = actors[i];
+        var ln = a.step();
+        var alpha = 0.6*opacity.get();
+        context.strokeStyle = "rgba(49, 130, 189, " + alpha + ")";
+        context.moveTo(ln.x1, ln.y1);
+        context.lineTo(ln.x2, ln.y2);
+    }
+    context.stroke();
+    opacity.step();
+});
+
+function actor(width, height, noiseScale, stepLength) {
+
+    var x = Math.random() * width,
+        y = Math.random() * height;
+
+    var noise = perlin.noise(noiseScale);
+
+    return {
+        // get the last point and the next point
+        step: function() {
+            var t = noise(x, y) * Math.PI * 5;
+            var x1 = x,
+                y1 = y;
+            x = x + stepLength * Math.cos(t);
+            y = y + stepLength * Math.sin(t);
+            return {
+                x1: x1,
+                y1: y1,
+                x2: x,
+                y2: y
+            }
+        }
+    }
+}
+
+function easeInOut(steps) {
+    var n = 0;
+    var val = 0;
+    return {
+        step:
+            function() {
+                val = 0.5*(1-Math.cos(2 * Math.PI * (n++) / steps));
+            },
+        get:
+            function() {
+                return val;
+            }
+    };
+}
+</script>
+</body>
+</html>
