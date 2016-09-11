@@ -12,93 +12,161 @@
 
 </style>
 <body>
+<canvas width="1440" height="600" id="vis"></canvas>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="../js/perlin.js"></script>
 <script src="../js/victor.js" charset="utf-8"></script>
 <script>
 
-var width = 1440,
-    height = 600,
-    noiseScale = 0.002,
-    actorStepLength = 1,
-    numActors = 10000,
-    step = 0,
-    steps = 150;
+class Actor {
+  constructor(width, height) {
+    this.position = new Victor(Math.random() * width, Math.random() * height)
+    this.oldPosition = this.position.clone()
+    this.perlin = perlin.noise(noiseScale)
+  }
 
-var canvas = d3.select("body")
-    .append("canvas")
-    .attr({width: width, height: height});
+  step() {
+    // var t        = this.perlin(this.position.x, this.position.y) * Math.PI * 5,
+    //     endPoint = new Victor(Math.cos(t), Math.sin(t))
+    //
+    // this.oldPosition.copy(this.position)
+    // this.position.mix(endPoint)
 
-var context = canvas.node().getContext("2d");
-context.fillStyle = "rgb(0, 0, 0)";
-context.fillRect(-1, -1, width, height);
+    var t  = this.perlin(this.position.x, this.position.y) * Math.PI * 5,
+        x1 = this.position.x,
+        y1 = this.position.y
 
-var actors = [];
-for(var i = 0; i < numActors; i++) {
-    actors.push(actor(width, height, noiseScale, actorStepLength));
-}
-
-var opacity = easeInOut(steps);
-
-d3.timer(function() {
-    if(++step > steps) {
-        console.log("done with animation");
-        return true;
-    }
-    context.lineWidth = 1;
-    context.globalCompositeOperation = 'lighter';
-    context.beginPath();
-    for(var i in actors) {
-        var a = actors[i];
-        var ln = a.step();
-        var alpha = 0.6*opacity.get();
-        context.strokeStyle = "rgba(49, 130, 189, " + alpha + ")";
-        context.moveTo(ln.x1, ln.y1);
-        context.lineTo(ln.x2, ln.y2);
-    }
-    context.stroke();
-    opacity.step();
-});
-
-function actor(width, height, noiseScale, stepLength) {
-
-    var x = Math.random() * width,
-        y = Math.random() * height;
-
-    var noise = perlin.noise(noiseScale);
+    this.position.x += stepLen * Math.cos(t)
+    this.position.y += stepLen * Math.sin(t)
 
     return {
-        // get the last point and the next point
-        step: function() {
-            var t = noise(x, y) * Math.PI * 5;
-            var x1 = x,
-                y1 = y;
-            x = x + stepLength * Math.cos(t);
-            y = y + stepLength * Math.sin(t);
-            return {
-                x1: x1,
-                y1: y1,
-                x2: x,
-                y2: y
-            }
-        }
+      x1: x1,
+      y1: y1,
+      x2: this.position.x,
+      y2: this.position.y
     }
+  }
 }
 
-function easeInOut(steps) {
-    var n = 0;
-    var val = 0;
-    return {
-        step:
-            function() {
-                val = 0.5*(1-Math.cos(2 * Math.PI * (n++) / steps));
-            },
-        get:
-            function() {
-                return val;
-            }
-    };
+var canvas      = document.getElementById('vis'),
+    context     = canvas.getContext('2d'),
+    width       = canvas.offsetWidth,
+    height      = canvas.offsetHeight,
+    numActors   = 10000,
+    noiseScale  = 0.002,
+    stepLen     = 1,
+    step        = 0,
+    steps       = 150,
+    actors      = []
+
+context.fillStyle = '#111'
+context.fillRect(0, 0, width, height)
+context.lineWidth = 1
+context.strokeStyle = '#fff'
+
+for (var i = 0; i < numActors; i++)
+  actors.push(new Actor(width, height))
+
+
+function tick(t) {
+  if(++step > steps) return
+
+  context.beginPath()
+  actors.forEach((actor) => {
+      var position = actor.step()
+      context.moveTo(position.x1, position.y1)
+      context.lineTo(position.x2, position.y2)
+  })
+  context.stroke()
+
+  requestAnimationFrame(tick)
 }
+
+requestAnimationFrame(tick)
+
+
+// var width = 1440,
+//     height = 600,
+//     noiseScale = 0.002,
+//     actorStepLength = 1,
+//     numActors = 10000,
+//     step = 0,
+//     steps = 150;
+//
+// var canvas = d3.select("body")
+//     .append("canvas")
+//     .attr({width: width, height: height});
+//
+// var context = canvas.node().getContext("2d");
+// context.fillStyle = "rgb(0, 0, 0)";
+// context.fillRect(-1, -1, width, height);
+//
+// var actors = [];
+// for(var i = 0; i < numActors; i++) {
+//     actors.push(actor(width, height, noiseScale, actorStepLength));
+// }
+//
+// var opacity = easeInOut(steps);
+//
+// d3.timer(function() {
+//     if(++step > steps) {
+//         console.log("done with animation");
+//         return true;
+//     }
+//     context.lineWidth = 1;
+//     context.globalCompositeOperation = 'lighter';
+//     context.beginPath();
+//     for(var i in actors) {
+//         var a = actors[i];
+//         var ln = a.step();
+//         var alpha = 0.6*opacity.get();
+//         context.strokeStyle = "rgba(49, 130, 189, " + alpha + ")";
+//         context.moveTo(ln.x1, ln.y1);
+//         context.lineTo(ln.x2, ln.y2);
+//     }
+//     context.stroke();
+//     opacity.step();
+// });
+//
+// function actor(width, height, noiseScale, stepLength) {
+//
+//     var x = Math.random() * width,
+//         y = Math.random() * height;
+//
+//     var noise = perlin.noise(noiseScale);
+//
+//     return {
+//         // get the last point and the next point
+//         step: function() {
+//             var t = noise(x, y) * Math.PI * 5;
+//             var x1 = x,
+//                 y1 = y;
+//             x = x + stepLength * Math.cos(t);
+//             y = y + stepLength * Math.sin(t);
+//             return {
+//                 x1: x1,
+//                 y1: y1,
+//                 x2: x,
+//                 y2: y
+//             }
+//         }
+//     }
+// }
+//
+// function easeInOut(steps) {
+//     var n = 0;
+//     var val = 0;
+//     return {
+//         step:
+//             function() {
+//                 val = 0.5*(1-Math.cos(2 * Math.PI * (n++) / steps));
+//             },
+//         get:
+//             function() {
+//                 return val;
+//             }
+//     };
+// }
 </script>
 </body>
 </html>
