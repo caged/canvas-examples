@@ -10,11 +10,16 @@
     background: rgb(255, 255, 255);
     }
 
+    canvas {
+      width: 100vw;
+      height: 100vh;
+    }
+
 </style>
 <body>
-<canvas width="1440" height="600" id="vis"></canvas>
+<canvas id="vis"></canvas>
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="../js/perlin.js"></script>
+<script src="../js/simplex-noise.js"></script>
 <script src="../js/victor.js" charset="utf-8"></script>
 <script>
 
@@ -22,29 +27,17 @@ class Actor {
   constructor(width, height) {
     this.position = new Victor(Math.random() * width, Math.random() * height)
     this.oldPosition = this.position.clone()
-    this.perlin = perlin.noise(noiseScale)
+    this.simplex = new SimplexNoise(Math.random)
+    this.color = "hsl(" + (Math.floor(Math.random() * 360)) + ", 100%, 50%)"
+
   }
 
   step() {
-    // var t        = this.perlin(this.position.x, this.position.y) * Math.PI * 5,
-    //     endPoint = new Victor(Math.cos(t), Math.sin(t))
-    //
-    // this.oldPosition.copy(this.position)
-    // this.position.mix(endPoint)
-
-    var t  = this.perlin(this.position.x, this.position.y) * Math.PI * 5,
-        x1 = this.position.x,
-        y1 = this.position.y
-
+    // var t = this.simplex.noise2D(this.position.x, this.position.y) * Math.PI * 5
+    var t = this.simplex.noise2D(this.position.x, this.position.y) * Math.PI * 5
+    this.oldPosition.copy(this.position)
     this.position.x += stepLen * Math.cos(t)
     this.position.y += stepLen * Math.sin(t)
-
-    return {
-      x1: x1,
-      y1: y1,
-      x2: this.position.x,
-      y2: this.position.y
-    }
   }
 }
 
@@ -52,17 +45,21 @@ var canvas      = document.getElementById('vis'),
     context     = canvas.getContext('2d'),
     width       = canvas.offsetWidth,
     height      = canvas.offsetHeight,
-    numActors   = 10000,
+    numActors   = 50000,
     noiseScale  = 0.002,
     stepLen     = 1,
     step        = 0,
     steps       = 150,
     actors      = []
 
-context.fillStyle = '#111'
+canvas.setAttribute('width', width)
+canvas.setAttribute('height', height)
+
+context.fillStyle = "hsla(100, 50%, 5%, 1)"
 context.fillRect(0, 0, width, height)
 context.lineWidth = 1
 context.strokeStyle = '#fff'
+var opacity = easeInOut(steps);
 
 for (var i = 0; i < numActors; i++)
   actors.push(new Actor(width, height))
@@ -73,11 +70,14 @@ function tick(t) {
 
   context.beginPath()
   actors.forEach((actor) => {
-      var position = actor.step()
-      context.moveTo(position.x1, position.y1)
-      context.lineTo(position.x2, position.y2)
+      var alpha = 0.2 * opacity.get();
+      actor.step()
+      context.moveTo(actor.oldPosition.x, actor.oldPosition.y)
+      context.lineTo(actor.position.x, actor.position.y)
+      context.strokeStyle = "hsla(100, 100%, 50%, " + alpha + ")"
   })
   context.stroke()
+  opacity.step()
 
   requestAnimationFrame(tick)
 }
@@ -153,20 +153,20 @@ requestAnimationFrame(tick)
 //     }
 // }
 //
-// function easeInOut(steps) {
-//     var n = 0;
-//     var val = 0;
-//     return {
-//         step:
-//             function() {
-//                 val = 0.5*(1-Math.cos(2 * Math.PI * (n++) / steps));
-//             },
-//         get:
-//             function() {
-//                 return val;
-//             }
-//     };
-// }
+function easeInOut(steps) {
+    var n = 0;
+    var val = 0;
+    return {
+        step:
+            function() {
+                val = 0.5*(1-Math.cos(2 * Math.PI * (n++) / steps));
+            },
+        get:
+            function() {
+                return val;
+            }
+    };
+}
 </script>
 </body>
 </html>
